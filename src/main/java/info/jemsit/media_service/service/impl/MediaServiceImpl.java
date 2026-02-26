@@ -3,7 +3,10 @@ package info.jemsit.media_service.service.impl;
 import info.jemsit.common.clients.property.ProductServiceClient;
 import info.jemsit.common.dto.response.product.propeprty.PropertyResponseDTO;
 import info.jemsit.common.exceptions.UserException;
+import info.jemsit.media_service.data.dao.SessionDAO;
+import info.jemsit.media_service.data.model.Session;
 import info.jemsit.media_service.service.MediaService;
+import info.jemsit.media_service.service.SessionResponseDTO;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +28,8 @@ public class MediaServiceImpl implements MediaService {
     private final MinioClient minioClient;
 
     private final ProductServiceClient productServiceClient;
+
+    private final SessionDAO sessionDAO;
 
     private final String bucketName = "real-estate-media";
 
