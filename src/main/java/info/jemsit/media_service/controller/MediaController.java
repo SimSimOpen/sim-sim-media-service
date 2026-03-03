@@ -23,6 +23,12 @@ public class MediaController {
         return ResponseEntity.ok(mediaService.uploadMedia(property_id, files));
     }
 
+    @DeleteMapping("/delete/media")
+    public ResponseEntity<?> deleteMedia(@RequestParam("media-url") String mediaUrl) {
+        mediaService.deleteMedia(mediaUrl);
+        return ResponseEntity.ok("Media deleted successfully");
+    }
+
     @PostMapping("/session")
     public ResponseEntity<?> createUploadSession() {
         return ResponseEntity.ok(sessionService.createUploadSession());

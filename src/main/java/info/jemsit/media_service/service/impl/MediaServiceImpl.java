@@ -1,6 +1,7 @@
 package info.jemsit.media_service.service.impl;
 
 import info.jemsit.common.clients.property.ProductServiceClient;
+import info.jemsit.common.dto.request.product.property.AddPropertyImagesRequestDTO;
 import info.jemsit.common.dto.response.product.propeprty.PropertyResponseDTO;
 import info.jemsit.common.exceptions.UserException;
 import info.jemsit.media_service.data.dao.SessionDAO;
@@ -9,6 +10,7 @@ import info.jemsit.media_service.service.MediaService;
 import info.jemsit.media_service.service.SessionResponseDTO;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -60,7 +62,25 @@ public class MediaServiceImpl implements MediaService {
                 throw new UserException("Failed to upload image. Please try again.");
             }
         }
-        return productServiceClient.addPropertyImage(id, urls);
+        return productServiceClient.addPropertyImage(new AddPropertyImagesRequestDTO(id, urls));
+    }
+
+    @Override
+    public void deleteMedia(String mediaUrl) {
+        var media = mediaUrl.split("/");
+        System.out.println(media[1]);
+        System.out.println(mediaUrl.substring(media[1].length() + 1));
+        try{
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(media[1])
+                            .object(mediaUrl.substring(media[1].length() + 1))
+                            .build()
+            );
+        } catch (Exception e) {
+            log.error("Error deleting file from MinIO: {}", e.getMessage());
+            throw new UserException("Failed to delete image. Please try again.");
+        }
     }
 
     private String getExt(String name) {

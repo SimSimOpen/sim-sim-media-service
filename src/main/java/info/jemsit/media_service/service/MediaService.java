@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface MediaService {
     PropertyResponseDTO uploadMedia(Long id, List<MultipartFile> files);
+
+    void deleteMedia(String mediaUrl);
 }
