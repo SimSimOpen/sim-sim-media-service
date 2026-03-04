@@ -1,7 +1,7 @@
 package info.jemsit.media_service.mapper;
 
+import info.jemsit.common.dto.response.media.SessionResponseDTO;
 import info.jemsit.media_service.data.model.Session;
-import info.jemsit.media_service.service.SessionResponseDTO;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")

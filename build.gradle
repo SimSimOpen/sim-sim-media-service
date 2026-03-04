@@ -38,7 +38,7 @@ ext {
 }
 
 dependencies {
-    implementation 'info.jemsit:common-contracts:1.4.1'
+    implementation 'info.jemsit:common-contracts:1.5.0'
     implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -61,6 +61,9 @@ dependencies {
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 
     implementation("io.minio:minio:8.6.0")
+
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    testImplementation 'org.springframework.amqp:spring-rabbit-test'
 }
 
 dependencyManagement {

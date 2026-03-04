@@ -1,11 +1,14 @@
 package info.jemsit.media_service.service.impl;
 
 import info.jemsit.common.clients.auth.AuthServiceClient;
+import info.jemsit.common.data.enums.RabbitMQMessages;
+import info.jemsit.common.dto.message.MediaFromMobileStarted;
+import info.jemsit.common.dto.response.media.SessionResponseDTO;
 import info.jemsit.common.exceptions.UserException;
 import info.jemsit.media_service.data.dao.SessionDAO;
 import info.jemsit.media_service.data.model.Session;
 import info.jemsit.media_service.mapper.SessionMapper;
-import info.jemsit.media_service.service.SessionResponseDTO;
+import info.jemsit.media_service.service.RabbitMQService;
 import info.jemsit.media_service.service.SessionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +26,7 @@ public class SessionServiceImpl implements SessionService {
     private final SessionDAO sessionDAO;
     private final AuthServiceClient authServClient;
     private final SessionMapper sessionMapper;
+    private final RabbitMQService rabbitMQService;
 
     @Override
     public SessionResponseDTO createUploadSession() {
@@ -37,10 +41,12 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public void getSession(String sessionID) {
-         var session = sessionDAO.getBySessionId(sessionID)
+        var session = sessionDAO.getBySessionId(sessionID)
                 .orElseThrow(() -> new UserException("Session not found"));
-         if(session.getExpiresAt().isBefore(Instant.now())) {
-             throw new UserException("Session expired");
-         }
+
+        if (session.getExpiresAt().isBefore(Instant.now())) {
+            throw new UserException("Session expired");
+        }
+        rabbitMQService.sendMessageToRabbitMQ(new MediaFromMobileStarted("1", RabbitMQMessages.MOBILE_SESSION_STARTED));
     }
 }

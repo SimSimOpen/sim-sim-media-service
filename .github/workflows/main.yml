@@ -122,6 +122,7 @@ jobs:
             # write .env securely
             cat > .env << EOF
             ${{ secrets.ENV_FILE }}
+            ${{ secrets.GLOBAL_ENV }}
             EOF
             chmod 600 .env
             
