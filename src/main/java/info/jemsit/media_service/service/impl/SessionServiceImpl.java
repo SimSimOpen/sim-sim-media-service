@@ -27,6 +27,7 @@ public class SessionServiceImpl implements SessionService {
     private final AuthServiceClient authServClient;
     private final SessionMapper sessionMapper;
     private final RabbitMQService rabbitMQService;
+    private final AuthServiceClient authServiceClient;
 
     @Override
     public SessionResponseDTO createUploadSession() {
@@ -47,6 +48,7 @@ public class SessionServiceImpl implements SessionService {
         if (session.getExpiresAt().isBefore(Instant.now())) {
             throw new UserException("Session expired");
         }
-        rabbitMQService.sendMessageToRabbitMQ(new MediaFromMobileStarted("1", RabbitMQMessages.MOBILE_SESSION_STARTED));
+        var userId = authServiceClient.getUserDetails().id();
+        rabbitMQService.sendMessageToRabbitMQ(new MediaFromMobileStarted(userId.toString(), RabbitMQMessages.MOBILE_SESSION_STARTED));
     }
 }
