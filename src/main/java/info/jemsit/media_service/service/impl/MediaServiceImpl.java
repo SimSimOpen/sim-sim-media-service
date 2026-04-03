@@ -5,6 +5,7 @@ import info.jemsit.common.dto.request.product.property.AddPropertyImagesRequestD
 import info.jemsit.common.dto.response.product.propeprty.PropertyResponseDTO;
 import info.jemsit.common.exceptions.UserException;
 import info.jemsit.media_service.data.dao.SessionDAO;
+import info.jemsit.media_service.service.ImageProcessingService;
 import info.jemsit.media_service.service.MediaService;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +28,7 @@ public class MediaServiceImpl implements MediaService {
     private final MinioClient minioClient;
 
     private final ProductServiceClient productServiceClient;
+    private final ImageProcessingService imageProcessingService;
 
     private final SessionDAO sessionDAO;
 
@@ -38,21 +41,22 @@ public class MediaServiceImpl implements MediaService {
 
         List<String> urls = new ArrayList<>();
         for (MultipartFile file : files) {
-
-            String fileName = getExt(file.getOriginalFilename());
-            String objKey = "properties/" + id + "/images/" + UUID.randomUUID() + fileName;
-
             try {
+                byte[] processedBytes = imageProcessingService.processImage(file);
+                String objKey = "properties/" + id + "/images/" + UUID.randomUUID() + ".webp";
 
                 minioClient.putObject(
                         PutObjectArgs.builder()
                                 .bucket(bucketName)
                                 .object(objKey)
-                                .contentType(file.getContentType())
-                                .stream(file.getInputStream(), file.getSize(), -1)
+                                .contentType("image/webp")
+                                .stream(new ByteArrayInputStream(processedBytes), processedBytes.length, -1)
                                 .build()
                 );
                 urls.add("/" + bucketName + "/" + objKey);
+            }catch (UserException e){
+                log.error("Image processing failed: {}", e.getMessage());
+                throw e;
             } catch (Exception e) {
                 log.error("Error uploading file to MinIO: {}", e.getMessage());
                 throw new UserException("Failed to upload image. Please try again.");

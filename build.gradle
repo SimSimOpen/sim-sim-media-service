@@ -67,6 +67,7 @@ dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
     testImplementation 'org.springframework.amqp:spring-rabbit-test'
+    implementation 'org.bytedeco:ffmpeg:8.0.1-1.5.13'
 }
 
 dependencyManagement {
