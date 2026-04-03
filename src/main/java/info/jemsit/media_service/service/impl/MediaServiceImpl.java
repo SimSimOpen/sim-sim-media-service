@@ -42,7 +42,7 @@ public class MediaServiceImpl implements MediaService {
         List<String> urls = new ArrayList<>();
         for (MultipartFile file : files) {
             try {
-                byte[] processedBytes = imageProcessingService.processImage(file);
+                byte[] processedBytes = imageProcessingService.processImageWithWaterMark(file);
                 String objKey = "properties/" + id + "/images/" + UUID.randomUUID() + ".webp";
 
                 minioClient.putObject(

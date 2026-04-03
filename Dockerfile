@@ -12,8 +12,9 @@ RUN --mount=type=secret,id=gradle_user \
     chmod 600 /root/.gradle/gradle.properties && \
     gradle clean build -x test
 
-RUN apt-get update && apt-get install -y ffmpeg
 
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
+RUN apt-get update && apt-get install -y ffmpeg
+
 COPY --from=build /app/build/libs/*.jar ./app.jar

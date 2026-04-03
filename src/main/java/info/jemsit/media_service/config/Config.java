@@ -24,4 +24,5 @@ public class Config {
                 .credentials(accessKey, secretKey)
                 .build();
     }
+
 }
