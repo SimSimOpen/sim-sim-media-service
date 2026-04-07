@@ -1,24 +1,20 @@
 package info.jemsit.media_service.service.impl;
 
+import info.jemsit.common.UserContext;
 import info.jemsit.common.clients.property.ProductServiceClient;
-import info.jemsit.common.dto.request.product.property.AddPropertyImagesRequestDTO;
-import info.jemsit.common.dto.response.product.propeprty.PropertyResponseDTO;
 import info.jemsit.common.exceptions.UserException;
-import info.jemsit.media_service.data.dao.SessionDAO;
-import info.jemsit.media_service.service.ImageProcessingService;
+import info.jemsit.media_service.service.AsyncMediaService;
+import info.jemsit.media_service.service.FileData;
 import info.jemsit.media_service.service.MediaService;
 import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -26,51 +22,40 @@ import java.util.UUID;
 public class MediaServiceImpl implements MediaService {
 
     private final MinioClient minioClient;
-
     private final ProductServiceClient productServiceClient;
-    private final ImageProcessingService imageProcessingService;
 
-    private final SessionDAO sessionDAO;
-
-    private final String bucketName = "real-estate-media";
+    private final AsyncMediaService asyncMediaService;
 
     @Override
-    public PropertyResponseDTO uploadMedia(Long id, List<MultipartFile> files) {
+    public Long uploadMedia(Long id, List<MultipartFile> files) {
 
-        if(id == null) id = productServiceClient.createDraftProperty().id();
+        if (id == null) id = productServiceClient.createDraftProperty().id();
 
-        List<String> urls = new ArrayList<>();
-        for (MultipartFile file : files) {
-            try {
-                byte[] processedBytes = imageProcessingService.processImageWithWaterMark(file);
-                String objKey = "properties/" + id + "/images/" + UUID.randomUUID() + ".webp";
+        String token = UserContext.getUserToken(); // capture on request thread ✅
+        final Long propertyId = id;
 
-                minioClient.putObject(
-                        PutObjectArgs.builder()
-                                .bucket(bucketName)
-                                .object(objKey)
-                                .contentType("image/webp")
-                                .stream(new ByteArrayInputStream(processedBytes), processedBytes.length, -1)
-                                .build()
-                );
-                urls.add("/" + bucketName + "/" + objKey);
-            }catch (UserException e){
-                log.error("Image processing failed: {}", e.getMessage());
-                throw e;
-            } catch (Exception e) {
-                log.error("Error uploading file to MinIO: {}", e.getMessage());
-                throw new UserException("Failed to upload image. Please try again.");
-            }
-        }
-        return productServiceClient.addPropertyImage(new AddPropertyImagesRequestDTO(id, urls));
+        List<FileData> fileDataList = files.stream()
+                .map(file -> {
+                    try {return new FileData(file.getBytes(), file.getOriginalFilename());}
+                    catch (Exception e) {
+                        log.error("Error reading file bytes: {}", e.getMessage());
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList();
+        asyncMediaService.asyncMediaUpload(propertyId, fileDataList, token);
+
+        return propertyId;
     }
+
 
     @Override
     public void deleteMedia(String mediaUrl) {
         var media = mediaUrl.split("/");
         System.out.println(media[1]);
         System.out.println(mediaUrl.substring(media[1].length() + 1));
-        try{
+        try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
                             .bucket(media[1])

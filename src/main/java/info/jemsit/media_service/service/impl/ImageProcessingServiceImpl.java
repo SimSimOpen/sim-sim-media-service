@@ -70,11 +70,11 @@ public class ImageProcessingServiceImpl implements ImageProcessingService {
     }
 
     @Override
-    public byte[] processImageWithWaterMark(MultipartFile file) throws Exception {
-        Path inputPath = Files.createTempFile("upload-", getExt(file.getOriginalFilename()));
-        Path outputPath = Files.createTempFile("processed-", getExt(file.getOriginalFilename()));
+    public byte[] processImageWithWaterMark(byte[] bytes, String filename) throws Exception {
+        Path inputPath = Files.createTempFile("upload-", getExt(filename));
+        Path outputPath = Files.createTempFile("processed-", getExt(filename));
         try {
-            Files.write(inputPath, file.getBytes());
+            Files.write(inputPath, bytes);
             ProcessBuilder pb = new ProcessBuilder(
                     "ffmpeg",
                     "-i", inputPath.toString(),
