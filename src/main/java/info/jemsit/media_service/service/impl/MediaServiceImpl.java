@@ -44,7 +44,7 @@ public class MediaServiceImpl implements MediaService {
                 })
                 .filter(Objects::nonNull)
                 .toList();
-        asyncMediaService.asyncMediaUpload(propertyId, fileDataList, token);
+        asyncMediaService.asyncProductMediaUpload(propertyId, fileDataList, token);
 
         return propertyId;
     }
@@ -68,9 +68,14 @@ public class MediaServiceImpl implements MediaService {
         }
     }
 
-    private String getExt(String name) {
-        if (name == null) return "";
-        int lastIndex = name.lastIndexOf(".");
-        return lastIndex >= 0 ? name.substring(lastIndex) : "";
+    @Override
+    public Long uploadUserAvatar(Long userId, MultipartFile file) {
+        try {
+            asyncMediaService.asyncUserAvatarUpload(userId, new FileData(file.getBytes(), file.getOriginalFilename()));
+            return userId;
+        } catch (Exception e) {
+            log.error("Error reading user avatar file bytes: {}", e.getMessage());
+            throw new UserException("Failed to upload avatar. Please try again.");
+        }
     }
 }

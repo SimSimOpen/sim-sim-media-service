@@ -7,6 +7,6 @@ import java.util.List;
 
 public interface MediaService {
     Long  uploadMedia(Long id, List<MultipartFile> files);
-
     void deleteMedia(String mediaUrl);
+    Long uploadUserAvatar(Long userId, MultipartFile file);
 }

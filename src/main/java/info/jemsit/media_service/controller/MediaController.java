@@ -18,9 +18,14 @@ public class MediaController {
     private final MediaService mediaService;
     private final SessionService sessionService;
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/upload-product-media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadMedia(@RequestParam(value = "property_id", required = false) Long property_id, @RequestPart("files") List<MultipartFile> files) {
         return ResponseEntity.ok(mediaService.uploadMedia(property_id, files));
+    }
+
+    @PostMapping(value = "/upload-user-avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadUserAvatar(@RequestParam("user_id") Long user_id,  @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(mediaService.uploadUserAvatar(user_id,file));
     }
 
     @DeleteMapping("/delete/media")

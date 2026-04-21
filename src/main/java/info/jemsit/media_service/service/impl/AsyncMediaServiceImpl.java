@@ -2,18 +2,18 @@ package info.jemsit.media_service.service.impl;
 
 import info.jemsit.common.UserContext;
 import info.jemsit.common.clients.property.ProductServiceClient;
+import info.jemsit.common.dto.message.UserAvatarUpdated;
 import info.jemsit.common.dto.request.product.property.AddPropertyImagesRequestDTO;
-import info.jemsit.media_service.data.dao.SessionDAO;
 import info.jemsit.media_service.service.AsyncMediaService;
 import info.jemsit.media_service.service.FileData;
 import info.jemsit.media_service.service.ImageProcessingService;
+import info.jemsit.media_service.service.RabbitMQService;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -28,25 +28,27 @@ public class AsyncMediaServiceImpl implements AsyncMediaService {
 
     private final MinioClient minioClient;
     private final ProductServiceClient productServiceClient;
-
     private final ImageProcessingService imageProcessingService;
-    private final SessionDAO sessionDAO;
-
-    private final String bucketName = "real-estate-media";
+    private final RabbitMQService rabbitMQService;
+    private final String PROPERTIES_BASE_PATH = "properties/";
+    private final  String USER_AVATARS_BASE_PATH = "user-avatars/";
+    private final String productBucketName = "real-estate-media";
+    private final String userBucketName = "user-media";
 
 
     @Override
     @Async
-    public void asyncMediaUpload(Long propertyId, List<FileData> files, String token){
+    public void asyncProductMediaUpload(Long propertyId, List<FileData> files, String token) {
         UserContext.setUserToken(token); // restore on async thread
-        try(var executor = Executors.newVirtualThreadPerTaskExecutor()){
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             List<String> urls = files.stream()
-                    .map(file-> executor.submit(()->processAndUpload(file.bytes(), file.originalFileName(), propertyId)))
+                    .map(file -> executor.submit(() -> processAndUpload(PROPERTIES_BASE_PATH, productBucketName,  file.bytes(), file.originalFileName(), propertyId)))
                     .toList()
                     .stream()
                     .map(future -> {
-                        try{return future.get();}
-                        catch (Exception e) {
+                        try {
+                            return future.get();
+                        } catch (Exception e) {
                             log.error("Error processing and uploading file: {}", e.getMessage());
                             return null;
                         }
@@ -54,14 +56,24 @@ public class AsyncMediaServiceImpl implements AsyncMediaService {
                     .filter(Objects::nonNull)
                     .toList();
             productServiceClient.addPropertyImage(new AddPropertyImagesRequestDTO(propertyId, urls));
-        }finally {
+        } finally {
             UserContext.clear(); // clear context to prevent memory leaks
         }
     }
 
-    private String processAndUpload(byte[] bytes, String filename, Long id) throws Exception {
+    @Override
+    public void asyncUserAvatarUpload(Long userId, FileData file) {
+            try {
+                String url = processAndUpload(USER_AVATARS_BASE_PATH, userBucketName, file.bytes(), file.originalFileName(), userId);
+                rabbitMQService.sendMessageToRabbitMQ(new UserAvatarUpdated(userId.toString(), url));
+            } catch (Exception e) {
+                log.error("Error processing and uploading user avatar: {}", e.getMessage());
+            }
+    }
+
+    private String processAndUpload(String basePath, String bucketName,   byte[] bytes, String filename, Long id) throws Exception {
         byte[] processedBytes = imageProcessingService.processImageWithWaterMark(bytes, filename);
-        String objKey = "properties/" + id + "/images/" + UUID.randomUUID() + ".webp";
+        String objKey = basePath + id + "/images/" + UUID.randomUUID() + ".webp";
 
         minioClient.putObject(
                 PutObjectArgs.builder()
