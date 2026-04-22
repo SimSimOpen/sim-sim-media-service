@@ -11,20 +11,21 @@ services:
       "java",
       "-Duser.timezone=Asia/Tashkent",
       "-Xms128m",
-      "-Xmx384m",
+      "-Xmx256m",
       "-XX:+UseG1GC",
       "-XX:MaxGCPauseMillis=200",
+      "-XX:MaxMetaspaceSize=96m",
       "-jar",
       "app.jar"
     ]
     deploy:
       resources:
         limits:
-          cpus: '1.0'          # Limit to 1 CPU core
-          memory: 512M         # Hard limit (container killed if exceeded)
+          cpus: '2.0'          # Limit to 1 CPU core
+          memory: 1400M         # Hard limit (container killed if exceeded)
         reservations:
-          cpus: '0.5'          # Guaranteed CPU allocation
-          memory: 256M
+          cpus: '1.0'          # Guaranteed CPU allocation
+          memory: 768M
     restart: always
     networks:
       - simsim
