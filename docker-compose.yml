@@ -11,10 +11,10 @@ services:
       "java",
       "-Duser.timezone=Asia/Tashkent",
       "-Xms128m",
-      "-Xmx256m",
+      "-Xmx512m",
       "-XX:+UseG1GC",
       "-XX:MaxGCPauseMillis=200",
-      "-XX:MaxMetaspaceSize=96m",
+      "-XX:MaxMetaspaceSize=256m",
       "-jar",
       "app.jar"
     ]
